@@ -79,10 +79,7 @@ export async function getAllYTInterestData(
   }));
   const interests = await aggregateMulticall(callDatas, blockNumber);
   return interests.map((b) => {
-    const rawData = utils.defaultAbiCoder.decode(
-      ['uint128', 'uint128'],
-      b
-    );
+    const rawData = utils.defaultAbiCoder.decode(['uint128', 'uint128'], b);
     return {
       index: BigNumber.from(rawData[0]),
       accrue: BigNumber.from(rawData[1])

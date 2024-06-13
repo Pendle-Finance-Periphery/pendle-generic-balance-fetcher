@@ -1,6 +1,10 @@
 import { BigNumber, ethers } from 'ethers';
 import { UserRecord, YTInterestData } from './types';
-import { getAllERC20Balances, getAllMarketActiveBalances, getAllYTInterestData } from './multicall';
+import {
+  getAllERC20Balances,
+  getAllMarketActiveBalances,
+  getAllYTInterestData
+} from './multicall';
 import { POOL_INFO } from './configuration';
 import * as constants from './consts';
 
@@ -81,36 +85,64 @@ export async function applyLpHolderShares(
   allUsers: string[],
   blockNumber: number
 ): Promise<void> {
-  const totalSy = (await getAllERC20Balances(POOL_INFO.SY, [lpToken], blockNumber))[0];
-  const allActiveBalances = await getAllMarketActiveBalances(lpToken, allUsers, blockNumber);
-  const totalActiveSupply = allActiveBalances.reduce((a, b) => a.add(b), ethers.BigNumber.from(0));
+  const totalSy = (
+    await getAllERC20Balances(POOL_INFO.SY, [lpToken], blockNumber)
+  )[0];
+  const allActiveBalances = await getAllMarketActiveBalances(
+    lpToken,
+    allUsers,
+    blockNumber
+  );
+  const totalActiveSupply = allActiveBalances.reduce(
+    (a, b) => a.add(b),
+    ethers.BigNumber.from(0)
+  );
 
-  async function processLiquidLocker(liquidLocker: string, totalBoostedSy: BigNumber) {
-    const validLockers = POOL_INFO.liquidLockers.filter((v) => v.address == liquidLocker && v.lpToken == lpToken);
+  async function processLiquidLocker(
+    liquidLocker: string,
+    totalBoostedSy: BigNumber
+  ) {
+    const validLockers = POOL_INFO.liquidLockers.filter(
+      (v) => v.address == liquidLocker && v.lpToken == lpToken
+    );
 
-    if (validLockers.length == 0 || validLockers[0].deployedBlock > blockNumber) {
+    if (
+      validLockers.length == 0 ||
+      validLockers[0].deployedBlock > blockNumber
+    ) {
       return;
     }
 
     const receiptToken = validLockers[0].receiptToken;
-    const allReceiptTokenBalances = await getAllERC20Balances(receiptToken, allUsers, blockNumber);
-    const totalLiquidLockerShares = allReceiptTokenBalances.reduce((a, b) => a.add(b), ethers.BigNumber.from(0));
+    const allReceiptTokenBalances = await getAllERC20Balances(
+      receiptToken,
+      allUsers,
+      blockNumber
+    );
+    const totalLiquidLockerShares = allReceiptTokenBalances.reduce(
+      (a, b) => a.add(b),
+      ethers.BigNumber.from(0)
+    );
 
     if (totalLiquidLockerShares.eq(0)) {
       return;
     }
 
-    for(let i = 0; i < allUsers.length; ++i) {
+    for (let i = 0; i < allUsers.length; ++i) {
       const user = allUsers[i];
       const receiptTokenBalance = allReceiptTokenBalances[i];
-      const boostedSyBalance = totalBoostedSy.mul(receiptTokenBalance).div(totalLiquidLockerShares);
+      const boostedSyBalance = totalBoostedSy
+        .mul(receiptTokenBalance)
+        .div(totalLiquidLockerShares);
       increaseUserAmount(result, user, boostedSyBalance);
     }
   }
 
-  for(let i = 0; i < allUsers.length; ++i) {
+  for (let i = 0; i < allUsers.length; ++i) {
     const holder = allUsers[i];
-    const boostedSyBalance = allActiveBalances[i].mul(totalSy).div(totalActiveSupply);
+    const boostedSyBalance = allActiveBalances[i]
+      .mul(totalSy)
+      .div(totalActiveSupply);
 
     if (isLiquidLocker(holder)) {
       await processLiquidLocker(holder, boostedSyBalance);

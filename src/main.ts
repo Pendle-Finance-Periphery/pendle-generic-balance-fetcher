@@ -10,7 +10,7 @@ async function fetchUserBalanceSnapshot(
 ): Promise<UserRecord> {
   const result: UserRecord = {};
   await applyYtHolderShares(result, allYTUsers, blockNumber);
-  for(const lp of POOL_INFO.LPs) {
+  for (const lp of POOL_INFO.LPs) {
     if (lp.deployedBlock <= blockNumber) {
       await applyLpHolderShares(result, lp.address, allLPUsers, blockNumber);
     }
@@ -41,12 +41,10 @@ async function main() {
   const block = 19127272;
   const res = (await fetchUserBalanceSnapshotBatch([block]))[0];
 
-
-  for(let user in res) {
+  for (let user in res) {
     if (res[user].eq(0)) continue;
     console.log(user, res[user].toString());
   }
 }
-
 
 main().catch(console.error);
