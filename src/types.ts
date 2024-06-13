@@ -25,3 +25,8 @@ export interface PoolConfiguration {
 }
 
 export type UserRecord = Record<string, ethers.BigNumber>;
+
+export enum CHAINS {
+  ETHEREUM = 1,
+  ARBITRUM = 42161
+}

@@ -1,6 +1,6 @@
-import { PoolConfiguration } from './types';
+import { CHAINS, PoolConfiguration } from './types';
 
-export const CHAIN = 1;
+export const CHAIN = CHAINS.ETHEREUM;
 
 export const POOL_INFO: PoolConfiguration = {
   SY: '0xac0047886a985071476a1186be89222659970d65',
