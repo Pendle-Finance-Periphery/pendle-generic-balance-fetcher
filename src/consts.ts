@@ -6,7 +6,7 @@ import PendleYieldTokenABI from '../abis/PendleYieldToken.json';
 import PendleMarketABI from '../abis/PendleMarket.json';
 
 export const MULTICALL_ADDRESS = '0xeefba1e63905ef1d7acba5a8513c70307c1ce441';
-export const PENDLE_TREASURY = '0x8270400d528c34e1596ef367eedec99080a1b592';
+export const PENDLE_TREASURY = '0xc328dfcd2c8450e2487a91daa9b75629075b7a43';
 export const MULTICALL_BATCH_SIZE = 1000;
 export const RPCS = {
   1: 'https://rpc.ankr.com/eth',
