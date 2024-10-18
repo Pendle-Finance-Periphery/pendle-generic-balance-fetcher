@@ -11,7 +11,7 @@ export class PendleAPI {
 
   static async query(token: string): Promise<string[]> {
     const resp = await axios.get(
-      `https://api-v2.pendle.finance/core/v1/statistics/get-distinct-user-from-token?token=${token.toLowerCase()}&size=100000`
+      `https://api-v2.pendle.finance/core/v1/statistics/get-distinct-user-from-token?token=${token.toLowerCase()}`
     );
     return resp.data.users;
   }
