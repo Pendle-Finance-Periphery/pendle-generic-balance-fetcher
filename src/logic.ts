@@ -3,7 +3,8 @@ import { UserRecord, YTInterestData } from './types';
 import {
   getAllERC20Balances,
   getAllMarketActiveBalances,
-  getAllYTInterestData
+  getAllYTInterestData,
+  getExpiredData
 } from './multicall';
 import { POOL_INFO } from './configuration';
 import * as constants from './consts';
@@ -25,6 +26,12 @@ export async function applyYtHolderShares(
   allUsers: string[],
   blockNumber: number
 ): Promise<void> {
+  const expiredData = await getExpiredData(POOL_INFO.YT, blockNumber);
+  if (expiredData.isExpired) {
+    increaseUserAmount(result, constants.PENDLE_TREASURY, expiredData.syReserve);
+    return;
+  }
+
   const balances = (
     await getAllERC20Balances(POOL_INFO.YT, allUsers, blockNumber)
   ).map((v, i) => {

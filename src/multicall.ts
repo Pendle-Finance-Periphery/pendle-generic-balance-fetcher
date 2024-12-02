@@ -86,3 +86,36 @@ export async function getAllYTInterestData(
     };
   });
 }
+
+export async function getExpiredData(
+  ytAddr: string,
+  blockNumber: number
+): Promise<{ isExpired: boolean; syReserve: BigNumber }> {
+  const callDatas = [
+    {
+      target: ytAddr,
+      callData: constants.Contracts.yieldTokenInterface.encodeFunctionData(
+        'isExpired',
+        []
+      )
+    },
+    {
+      target: ytAddr,
+      callData: constants.Contracts.yieldTokenInterface.encodeFunctionData(
+        'syReserve',
+        []
+      )
+    }
+  ];
+
+  const result = await aggregateMulticall(callDatas, blockNumber);
+  const isExpired = utils.defaultAbiCoder.decode(['bool'], result[0])[0];
+  const syReserve = BigNumber.from(
+    utils.defaultAbiCoder.decode(['uint256'], result[1])[0]
+  );
+
+  return {
+    isExpired,
+    syReserve
+  };
+}
