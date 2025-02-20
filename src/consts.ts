@@ -10,7 +10,9 @@ const RPCS = {
   42161: 'https://rpc.ankr.com/arbitrum',
   56: 'https://rpc.ankr.com/bsc',
   5000: 'https://rpc.ankr.com/mantle',
-  8453: 'https://rpc.ankr.com/base'
+  8453: 'https://rpc.ankr.com/base',
+  146: 'https://rpc.ankr.com/sonic_mainnet',
+  80094: 'https://rpc.berachain.com'
 };
 
 const MULTICALLS = {
@@ -18,7 +20,9 @@ const MULTICALLS = {
   42161: '0xcA11bde05977b3631167028862bE2a173976CA11',
   56: '0xcA11bde05977b3631167028862bE2a173976CA11',
   5000: '0xcA11bde05977b3631167028862bE2a173976CA11',
-  8453: '0xcA11bde05977b3631167028862bE2a173976CA11'
+  8453: '0xcA11bde05977b3631167028862bE2a173976CA11',
+  146: '0xcA11bde05977b3631167028862bE2a173976CA11',
+  80094: '0xcA11bde05977b3631167028862bE2a173976CA11'
 };
 
 export const PENDLE_TREASURY = '0xc328dfcd2c8450e2487a91daa9b75629075b7a43';

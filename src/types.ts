@@ -28,5 +28,10 @@ export type UserRecord = Record<string, ethers.BigNumber>;
 
 export enum CHAINS {
   ETHEREUM = 1,
-  ARBITRUM = 42161
+  ARBITRUM = 42161,
+  BNB = 56,
+  BASE = 8453,
+  MANTLE = 5000,
+  SONIC = 146,
+  BERA = 80094
 }
