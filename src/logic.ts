@@ -4,7 +4,7 @@ import {
   getAllERC20Balances,
   getAllMarketActiveBalances,
   getAllYTInterestData,
-  getExpiredData
+  getYTGeneralData
 } from './multicall';
 import { POOL_INFO } from './configuration';
 import * as constants from './consts';
@@ -26,9 +26,9 @@ export async function applyYtHolderShares(
   allUsers: string[],
   blockNumber: number
 ): Promise<void> {
-  const expiredData = await getExpiredData(POOL_INFO.YT, blockNumber);
-  if (expiredData.isExpired) {
-    increaseUserAmount(result, constants.PENDLE_TREASURY, expiredData.syReserve);
+  const generalData = await getYTGeneralData(POOL_INFO.YT, blockNumber);
+  if (generalData.isExpired) {
+    increaseUserAmount(result, constants.PENDLE_TREASURY, generalData.syReserve);
     return;
   }
 
@@ -59,9 +59,17 @@ export async function applyYtHolderShares(
 
   const YTBalances: UserRecord = {};
 
+  const factoryContract = new ethers.Contract(
+    generalData.factory,
+    constants.ABIs.pendleYieldContractFactory,
+    constants.PROVIDER
+  );
+
+  const feeRate = await factoryContract.rewardFeeRate({ blockTag: blockNumber });
+
   for (const b of balances) {
     const impliedBalance = constants._1E18.mul(b.balance).div(YTIndex);
-    const feeShare = impliedBalance.mul(3).div(100);
+    const feeShare = impliedBalance.mul(feeRate).div(constants._1E18);
     const remaining = impliedBalance.sub(feeShare);
     increaseUserAmount(result, b.user, remaining);
     increaseUserAmount(result, constants.PENDLE_TREASURY, feeShare);

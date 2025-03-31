@@ -3,24 +3,33 @@ import { applyLpHolderShares, applyYtHolderShares } from './logic';
 import { PendleAPI } from './pendle-api';
 import { UserRecord } from './types';
 
+type SnapshotResult = {
+  resultYT: UserRecord;
+  resultLP: UserRecord;
+}
+
 async function fetchUserBalanceSnapshot(
   allYTUsers: string[],
   allLPUsers: string[],
   blockNumber: number
-): Promise<UserRecord> {
-  const result: UserRecord = {};
-  await applyYtHolderShares(result, allYTUsers, blockNumber);
+): Promise<SnapshotResult> {
+  const resultYT: UserRecord = {};
+  const resultLP: UserRecord = {};
+  await applyYtHolderShares(resultYT, allYTUsers, blockNumber);
   for (const lp of POOL_INFO.LPs) {
     if (lp.deployedBlock <= blockNumber) {
-      await applyLpHolderShares(result, lp.address, allLPUsers, blockNumber);
+      await applyLpHolderShares(resultLP, lp.address, allLPUsers, blockNumber);
     }
   }
-  return result;
+  return {
+    resultYT,
+    resultLP
+  };
 }
 
 async function fetchUserBalanceSnapshotBatch(
   blockNumbers: number[]
-): Promise<UserRecord[]> {
+): Promise<SnapshotResult[]> {
   const allLiquidLockerTokens = POOL_INFO.liquidLockers.map(
     (l) => l.receiptToken
   );
@@ -38,12 +47,19 @@ async function fetchUserBalanceSnapshotBatch(
 }
 
 async function main() {
-  const block = 19127272;
+  const block = 2796989;
   const res = (await fetchUserBalanceSnapshotBatch([block]))[0];
 
-  for (let user in res) {
-    if (res[user].eq(0)) continue;
-    console.log(user, res[user].toString());
+  console.log('YT')
+  for (let user in res.resultYT) {
+    if (res.resultYT[user].eq(0)) continue;
+    console.log(user, res.resultYT[user].toString());
+  }
+
+  console.log('LP')
+  for (let user in res.resultLP) {
+    if (res.resultLP[user].eq(0)) continue;
+    console.log(user, res.resultLP[user].toString());
   }
 }
 

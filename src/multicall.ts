@@ -87,10 +87,10 @@ export async function getAllYTInterestData(
   });
 }
 
-export async function getExpiredData(
+export async function getYTGeneralData(
   ytAddr: string,
   blockNumber: number
-): Promise<{ isExpired: boolean; syReserve: BigNumber }> {
+): Promise<{ isExpired: boolean; syReserve: BigNumber, factory: string }> {
   const callDatas = [
     {
       target: ytAddr,
@@ -105,6 +105,13 @@ export async function getExpiredData(
         'syReserve',
         []
       )
+    },
+    {
+      target: ytAddr,
+      callData: constants.Contracts.yieldTokenInterface.encodeFunctionData(
+        'factory',
+        []
+      )
     }
   ];
 
@@ -113,9 +120,11 @@ export async function getExpiredData(
   const syReserve = BigNumber.from(
     utils.defaultAbiCoder.decode(['uint256'], result[1])[0]
   );
+  const factory = utils.defaultAbiCoder.decode(['address'], result[2])[0];
 
   return {
     isExpired,
-    syReserve
+    syReserve,
+    factory
   };
 }

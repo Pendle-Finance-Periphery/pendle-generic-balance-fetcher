@@ -4,6 +4,7 @@ import * as config from './configuration';
 import MulticallABI from '../abis/Multicall.json';
 import PendleYieldTokenABI from '../abis/PendleYieldToken.json';
 import PendleMarketABI from '../abis/PendleMarket.json';
+import PendleYieldContractFactoryABI from '../abis/PendleYieldContractFactory.json';
 
 const RPCS = {
   1: 'https://rpc.ankr.com/eth',
@@ -36,7 +37,8 @@ export const MULTICALL_ADDRESS = MULTICALLS[config.CHAIN];
 export const ABIs = {
   multicall: MulticallABI,
   pendleYieldToken: PendleYieldTokenABI,
-  pendleMarket: PendleMarketABI
+  pendleMarket: PendleMarketABI,
+  pendleYieldContractFactory: PendleYieldContractFactoryABI
 };
 
 export const Contracts = {
