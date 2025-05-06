@@ -1,13 +1,13 @@
 import { CHAINS, PoolConfiguration } from './types';
 
-export const CHAIN = CHAINS.ETHEREUM;
+export const CHAIN = CHAINS.SONIC;
 
 export const POOL_INFO: PoolConfiguration = {
-  SY: '0xac0047886a985071476a1186be89222659970d65',
-  YT: '0xfb35fd0095dd1096b1ca49ad44d8c5812a201677',
+  SY: '0xc4a9d8b486f388cc0e4168d2904277e8c8372fa3',
+  YT: '0x18d2d54f42ba720851bae861b98a0f4b079e6027',
   LPs: [
     {
-      address: '0xf32e58f92e60f4b0a37a69b95d642a471365eae8',
+      address: '0x3f5ea53d1160177445b1898afbb16da111182418',
       deployedBlock: 18969534
     }
   ],

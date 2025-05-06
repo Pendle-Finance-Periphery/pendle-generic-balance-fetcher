@@ -1,3 +1,4 @@
+import { BigNumber } from 'ethers';
 import { POOL_INFO } from './configuration';
 import { applyLpHolderShares, applyYtHolderShares } from './logic';
 import { PendleAPI } from './pendle-api';
@@ -35,8 +36,8 @@ async function fetchUserBalanceSnapshotBatch(
   );
   const allLPTokens = POOL_INFO.LPs.map((l) => l.address);
 
-  const allYTUsers = await PendleAPI.query(POOL_INFO.YT);
-  const allLPUsers = await PendleAPI.queryAllTokens([
+  let allYTUsers = await PendleAPI.query(POOL_INFO.YT);
+  let allLPUsers = await PendleAPI.queryAllTokens([
     ...allLPTokens,
     ...allLiquidLockerTokens
   ]);
@@ -47,20 +48,29 @@ async function fetchUserBalanceSnapshotBatch(
 }
 
 async function main() {
-  const block = 2796989;
-  const res = (await fetchUserBalanceSnapshotBatch([block]))[0];
+  const userShareMap: Record<string, BigNumber> = {};
+  const startBlock = 23968001;
+  for (let block = startBlock; block < startBlock + 1; block++) {
+    console.log(`Processing block ${block}`);
+    const res = (await fetchUserBalanceSnapshotBatch([block]))[0];
+    for (let user in res.resultYT) {
+      if (res.resultYT[user].eq(0)) continue;
+      userShareMap[user] = (userShareMap[user] ?? BigNumber.from(0)).add(res.resultYT[user]);
+    }
 
-  console.log('YT')
-  for (let user in res.resultYT) {
-    if (res.resultYT[user].eq(0)) continue;
-    console.log(user, res.resultYT[user].toString());
+    for (let user in res.resultLP) {
+      if (res.resultLP[user].eq(0)) continue;
+      userShareMap[user] = (userShareMap[user] ?? BigNumber.from(0)).add(res.resultLP[user]);
+    }
   }
 
-  console.log('LP')
-  for (let user in res.resultLP) {
-    if (res.resultLP[user].eq(0)) continue;
-    console.log(user, res.resultLP[user].toString());
-  }
+  const total = Object.values(userShareMap).reduce((a, b) => a.add(b), BigNumber.from(0));
+
+  const fs = require('fs');
+  const csvContent = Object.entries(userShareMap)
+    .map(([user, amount]) => `${user},${amount.toString()}`)
+    .join('\n');
+  fs.writeFileSync('user_shares.csv', 'user,point\n' + csvContent);
 }
 
 main().catch(console.error);
