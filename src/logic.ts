@@ -159,11 +159,7 @@ export async function applyLpHolderShares(
       .mul(totalSy)
       .div(totalActiveSupply);
 
-    if (isLiquidLocker(holder)) {
-      await processLiquidLocker(holder, boostedSyBalance);
-    } else {
-      increaseUserAmount(result, holder, boostedSyBalance);
-    }
+    increaseUserAmount(result, holder, boostedSyBalance);
   }
 }
 

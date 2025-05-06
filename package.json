@@ -7,7 +7,9 @@
     "typescript": "^5.4.5"
   },
   "scripts": {
-    "format": "prettier --config .prettierrc 'src/**/*.ts' --write"
+    "format": "prettier --config .prettierrc 'src/**/*.ts' --write",
+    "build": "tsc",
+    "start": "ts-node src/main.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.4.0",
