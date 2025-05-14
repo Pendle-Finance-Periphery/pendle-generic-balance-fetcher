@@ -1,5 +1,5 @@
-import { BigNumber, ethers } from 'ethers';
-import { UserRecord, YTInterestData } from './types';
+import { ethers } from 'ethers';
+import { UserRecord } from './types';
 import {
   getAllERC20Balances,
   getAllMarketActiveBalances,
@@ -113,45 +113,6 @@ export async function applyLpHolderShares(
     ethers.BigNumber.from(0)
   );
 
-  async function processLiquidLocker(
-    liquidLocker: string,
-    totalBoostedSy: BigNumber
-  ) {
-    const validLockers = POOL_INFO.liquidLockers.filter(
-      (v) => v.address == liquidLocker && v.lpToken == lpToken
-    );
-
-    if (
-      validLockers.length == 0 ||
-      validLockers[0].deployedBlock > blockNumber
-    ) {
-      return;
-    }
-
-    const receiptToken = validLockers[0].receiptToken;
-    const allReceiptTokenBalances = await getAllERC20Balances(
-      receiptToken,
-      allUsers,
-      blockNumber
-    );
-    const totalLiquidLockerShares = allReceiptTokenBalances.reduce(
-      (a, b) => a.add(b),
-      ethers.BigNumber.from(0)
-    );
-
-    if (totalLiquidLockerShares.eq(0)) {
-      return;
-    }
-
-    for (let i = 0; i < allUsers.length; ++i) {
-      const user = allUsers[i];
-      const receiptTokenBalance = allReceiptTokenBalances[i];
-      const boostedSyBalance = totalBoostedSy
-        .mul(receiptTokenBalance)
-        .div(totalLiquidLockerShares);
-      increaseUserAmount(result, user, boostedSyBalance);
-    }
-  }
 
   for (let i = 0; i < allUsers.length; ++i) {
     const holder = allUsers[i];
@@ -159,14 +120,6 @@ export async function applyLpHolderShares(
       .mul(totalSy)
       .div(totalActiveSupply);
 
-    if (isLiquidLocker(holder)) {
-      await processLiquidLocker(holder, boostedSyBalance);
-    } else {
-      increaseUserAmount(result, holder, boostedSyBalance);
-    }
+    increaseUserAmount(result, holder, boostedSyBalance);
   }
-}
-
-function isLiquidLocker(addr: string) {
-  return POOL_INFO.liquidLockers.some((v) => addr == v.address);
 }

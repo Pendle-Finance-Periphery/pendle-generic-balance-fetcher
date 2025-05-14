@@ -30,15 +30,11 @@ async function fetchUserBalanceSnapshot(
 async function fetchUserBalanceSnapshotBatch(
   blockNumbers: number[]
 ): Promise<SnapshotResult[]> {
-  const allLiquidLockerTokens = POOL_INFO.liquidLockers.map(
-    (l) => l.receiptToken
-  );
   const allLPTokens = POOL_INFO.LPs.map((l) => l.address);
 
   const allYTUsers = await PendleAPI.query(POOL_INFO.YT);
   const allLPUsers = await PendleAPI.queryAllTokens([
     ...allLPTokens,
-    ...allLiquidLockerTokens
   ]);
 
   return await Promise.all(
@@ -47,17 +43,17 @@ async function fetchUserBalanceSnapshotBatch(
 }
 
 async function main() {
-  const block = 2796989;
+  const block = 4174049;
   const res = (await fetchUserBalanceSnapshotBatch([block]))[0];
 
   console.log('YT')
-  for (let user in res.resultYT) {
+  for (const user in res.resultYT) {
     if (res.resultYT[user].eq(0)) continue;
     console.log(user, res.resultYT[user].toString());
   }
 
   console.log('LP')
-  for (let user in res.resultLP) {
+  for (const user in res.resultLP) {
     if (res.resultLP[user].eq(0)) continue;
     console.log(user, res.resultLP[user].toString());
   }

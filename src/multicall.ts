@@ -1,4 +1,3 @@
-import MulticalABI from '../abis/Multicall.json';
 import { BigNumber, utils } from 'ethers';
 import * as constants from './consts';
 import { YTInterestData } from './types';
