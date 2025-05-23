@@ -100,8 +100,13 @@ export async function applyLpHolderShares(
 
   async function processLiquidLocker(
     liquidLocker: string,
-    totalBoostedSy: BigNumber
+    totalBoostedSy: BigNumber,
+    performanceFeeBps: BigNumber
   ) {
+    const userBoostedSy = totalBoostedSy.sub(
+      totalBoostedSy.mul(performanceFeeBps).div(10_000)
+    );
+
     const validLockers = POOL_INFO.liquidLockers.filter(
       (v) => v.address == liquidLocker && v.lpToken == lpToken
     );
@@ -131,7 +136,7 @@ export async function applyLpHolderShares(
     for (let i = 0; i < allUsers.length; ++i) {
       const user = allUsers[i];
       const receiptTokenBalance = allReceiptTokenBalances[i];
-      const boostedSyBalance = totalBoostedSy
+      const boostedSyBalance = userBoostedSy
         .mul(receiptTokenBalance)
         .div(totalLiquidLockerShares);
       increaseUserAmount(result, user, boostedSyBalance);
@@ -145,7 +150,13 @@ export async function applyLpHolderShares(
       .div(totalActiveSupply);
 
     if (isLiquidLocker(holder)) {
-      await processLiquidLocker(holder, boostedSyBalance);
+      const locker = POOL_INFO.liquidLockers.find(
+        (v) => v.address == holder && v.lpToken == lpToken
+      );
+      const performanceFeeBps =
+        locker?.performanceFeeBps ?? ethers.BigNumber.from(0);
+
+      await processLiquidLocker(holder, boostedSyBalance, performanceFeeBps);
     } else {
       increaseUserAmount(result, holder, boostedSyBalance);
     }

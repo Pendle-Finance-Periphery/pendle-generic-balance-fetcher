@@ -10,6 +10,7 @@ type LiquidLocker = {
   receiptToken: string;
   lpToken: string;
   deployedBlock: number;
+  performanceFeeBps: ethers.BigNumber;
 };
 
 export type YTInterestData = {
