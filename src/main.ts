@@ -61,10 +61,6 @@ async function fetchUserBalanceSnapshotBatch(
 async function main() {
   const block = 22672619;
 
-  // const api
-
-  // await PendleAPI.queryLL(CHAIN, POOL_INFO.LPs[0].address);
-
   const res = (await fetchUserBalanceSnapshotBatch([block]))[0];
 
   for (const user in res.resultYT) {
