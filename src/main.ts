@@ -1,26 +1,37 @@
-import { POOL_INFO } from './configuration';
+import { CHAIN, POOL_INFO } from './configuration';
 import { applyLpHolderShares, applyYtHolderShares } from './logic';
-import { PendleAPI } from './pendle-api';
+import { LiquidLockerData, PendleAPI } from './pendle-api';
 import { UserRecord } from './types';
 
 type SnapshotResult = {
   resultYT: UserRecord;
   resultLP: UserRecord;
-}
+};
 
 async function fetchUserBalanceSnapshot(
   allYTUsers: string[],
   allLPUsers: string[],
+  allLLDatas: LiquidLockerData[][],
   blockNumber: number
 ): Promise<SnapshotResult> {
   const resultYT: UserRecord = {};
   const resultLP: UserRecord = {};
   await applyYtHolderShares(resultYT, allYTUsers, blockNumber);
-  for (const lp of POOL_INFO.LPs) {
+
+  for (let i = 0; i < POOL_INFO.LPs.length; ++i) {
+    const lp = POOL_INFO.LPs[i];
+    const llData = allLLDatas[i];
     if (lp.deployedBlock <= blockNumber) {
-      await applyLpHolderShares(resultLP, lp.address, allLPUsers, blockNumber);
+      await applyLpHolderShares(
+        resultLP,
+        lp.address,
+        allLPUsers,
+        llData,
+        blockNumber
+      );
     }
   }
+
   return {
     resultYT,
     resultLP
@@ -33,26 +44,34 @@ async function fetchUserBalanceSnapshotBatch(
   const allLPTokens = POOL_INFO.LPs.map((l) => l.address);
 
   const allYTUsers = await PendleAPI.query(POOL_INFO.YT);
-  const allLPUsers = await PendleAPI.queryAllTokens([
-    ...allLPTokens,
-  ]);
+  const allLPUsers = await PendleAPI.queryAllTokens([...allLPTokens]);
+
+  const allLLDatas: LiquidLockerData[][] = [];
+  for (let market of POOL_INFO.LPs) {
+    allLLDatas.push(await PendleAPI.queryLL(CHAIN, market.address));
+  }
 
   return await Promise.all(
-    blockNumbers.map((b) => fetchUserBalanceSnapshot(allYTUsers, allLPUsers, b))
+    blockNumbers.map((b) =>
+      fetchUserBalanceSnapshot(allYTUsers, allLPUsers, allLLDatas, b)
+    )
   );
 }
 
 async function main() {
-  const block = 4174049;
+  const block = 22672619;
+
+  // const api
+
+  // await PendleAPI.queryLL(CHAIN, POOL_INFO.LPs[0].address);
+
   const res = (await fetchUserBalanceSnapshotBatch([block]))[0];
 
-  console.log('YT')
   for (const user in res.resultYT) {
     if (res.resultYT[user].eq(0)) continue;
     console.log(user, res.resultYT[user].toString());
   }
 
-  console.log('LP')
   for (const user in res.resultLP) {
     if (res.resultLP[user].eq(0)) continue;
     console.log(user, res.resultLP[user].toString());

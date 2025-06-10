@@ -31,8 +31,30 @@ export async function aggregateMulticall(
 export async function getAllERC20Balances(
   token: string,
   addresses: string[],
-  blockNumber: number
-): Promise<BigNumber[]> {
+  blockNumber: number,
+  checkRequired: false
+): Promise<BigNumber[]>;
+
+export async function getAllERC20Balances(
+  token: string,
+  addresses: string[],
+  blockNumber: number,
+  checkRequired: boolean
+): Promise<BigNumber[] | null>;
+
+export async function getAllERC20Balances(
+  token: string,
+  addresses: string[],
+  blockNumber: number,
+  checkRequired: boolean
+): Promise<BigNumber[] | null> {
+  if (checkRequired) {
+    const code = await constants.PROVIDER.getCode(token, blockNumber);
+    if (code == '0x') {
+      return null;
+    }
+  }
+
   const callDatas = addresses.map((address) => ({
     target: token,
     callData: constants.Contracts.marketInterface.encodeFunctionData(
@@ -89,7 +111,7 @@ export async function getAllYTInterestData(
 export async function getYTGeneralData(
   ytAddr: string,
   blockNumber: number
-): Promise<{ isExpired: boolean; syReserve: BigNumber, factory: string }> {
+): Promise<{ isExpired: boolean; syReserve: BigNumber; factory: string }> {
   const callDatas = [
     {
       target: ytAddr,

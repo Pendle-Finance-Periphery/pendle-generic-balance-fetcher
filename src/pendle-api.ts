@@ -1,5 +1,12 @@
 import axios from 'axios';
 
+export type LiquidLockerData = {
+  name: string;
+  lpHolder: string;
+  receiptToken: string;
+  users: string[];
+};
+
 export class PendleAPI {
   static async queryAllTokens(tokens: string[]): Promise<string[]> {
     const allResults = await Promise.all(
@@ -15,4 +22,16 @@ export class PendleAPI {
     );
     return resp.data.users;
   }
+
+  static async queryLL(
+    chainId: number,
+    market: string
+  ): Promise<LiquidLockerData[]> {
+    const resp = await axios.get(
+      `https://api-v2.pendle.finance/core/v1/statistics/liquid-locker-pools?chainId=${chainId}&lpAddress=${market.toLowerCase()}`
+    );
+    return resp.data.results;
+  }
+
+  static async queryMM() {}
 }

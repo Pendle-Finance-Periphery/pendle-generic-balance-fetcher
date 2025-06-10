@@ -8,6 +8,7 @@ import {
 } from './multicall';
 import { POOL_INFO } from './configuration';
 import * as constants from './consts';
+import { LiquidLockerData } from './pendle-api';
 
 function increaseUserAmount(
   result: UserRecord,
@@ -28,12 +29,16 @@ export async function applyYtHolderShares(
 ): Promise<void> {
   const generalData = await getYTGeneralData(POOL_INFO.YT, blockNumber);
   if (generalData.isExpired) {
-    increaseUserAmount(result, constants.PENDLE_TREASURY, generalData.syReserve);
+    increaseUserAmount(
+      result,
+      constants.PENDLE_TREASURY,
+      generalData.syReserve
+    );
     return;
   }
 
   const balances = (
-    await getAllERC20Balances(POOL_INFO.YT, allUsers, blockNumber)
+    await getAllERC20Balances(POOL_INFO.YT, allUsers, blockNumber, false)
   ).map((v, i) => {
     return {
       user: allUsers[i],
@@ -65,7 +70,9 @@ export async function applyYtHolderShares(
     constants.PROVIDER
   );
 
-  const feeRate = await factoryContract.rewardFeeRate({ blockTag: blockNumber });
+  const feeRate = await factoryContract.rewardFeeRate({
+    blockTag: blockNumber
+  });
 
   for (const b of balances) {
     const impliedBalance = constants._1E18.mul(b.balance).div(YTIndex);
@@ -98,10 +105,11 @@ export async function applyLpHolderShares(
   result: UserRecord,
   lpToken: string,
   allUsers: string[],
+  llDatas: LiquidLockerData[],
   blockNumber: number
 ): Promise<void> {
   const totalSy = (
-    await getAllERC20Balances(POOL_INFO.SY, [lpToken], blockNumber)
+    await getAllERC20Balances(POOL_INFO.SY, [lpToken], blockNumber, false)
   )[0];
   const allActiveBalances = await getAllMarketActiveBalances(
     lpToken,
@@ -113,13 +121,53 @@ export async function applyLpHolderShares(
     ethers.BigNumber.from(0)
   );
 
-
   for (let i = 0; i < allUsers.length; ++i) {
     const holder = allUsers[i];
+    const llIndex = llDatas.findIndex(
+      (data) => data.lpHolder.toLowerCase() === holder.toLowerCase()
+    );
+
     const boostedSyBalance = allActiveBalances[i]
       .mul(totalSy)
       .div(totalActiveSupply);
 
-    increaseUserAmount(result, holder, boostedSyBalance);
+    if (llIndex === -1) {
+      increaseUserAmount(result, holder, boostedSyBalance);
+    } else {
+      const llData = llDatas[llIndex];
+      const users = llData.users;
+      const receiptToken = llData.receiptToken;
+
+      const balances = await getAllERC20Balances(
+        receiptToken,
+        users,
+        blockNumber,
+        true
+      );
+
+      if (!balances) {
+        continue;
+      }
+
+      const totalReceiptBalance = balances.reduce(
+        (a, b) => a.add(b),
+        ethers.BigNumber.from(0)
+      );
+
+      for (let j = 0; j < users.length; ++j) {
+        const user = users[j];
+        const receiptBalance = balances[j];
+
+        if (receiptBalance.isZero()) {
+          continue;
+        }
+
+        const userShare = receiptBalance
+          .mul(boostedSyBalance)
+          .div(totalReceiptBalance);
+
+        increaseUserAmount(result, user, userShare);
+      }
+    }
   }
 }

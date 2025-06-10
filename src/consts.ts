@@ -7,13 +7,13 @@ import PendleMarketABI from '../abis/PendleMarket.json';
 import PendleYieldContractFactoryABI from '../abis/PendleYieldContractFactory.json';
 
 const RPCS = {
-  1: 'https://rpc.ankr.com/eth',
-  42161: 'https://rpc.ankr.com/arbitrum',
-  56: 'https://rpc.ankr.com/bsc',
-  5000: 'https://rpc.ankr.com/mantle',
-  8453: 'https://rpc.ankr.com/base',
-  146: 'https://rpc.ankr.com/sonic_mainnet',
-  80094: 'https://rpc.berachain.com'
+  1: 'https://eth.llamarpc.com',
+  42161: 'https://arbitrum-one-rpc.publicnode.com',
+  56: 'https://binance.llamarpc.com',
+  5000: 'https://rpc.mantle.xyz',
+  8453: 'https://base.llamarpc.com',
+  146: 'https://rpc.soniclabs.com',
+  80094: 'https://berachain.drpc.org'
 };
 
 const MULTICALLS = {
