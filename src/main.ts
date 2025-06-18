@@ -1,5 +1,9 @@
 import { CHAIN, POOL_INFO } from './configuration';
-import { applyLpHolderShares, applyYtHolderShares } from './logic';
+import {
+  applyLpHolderShares,
+  applyLpHolderValuesInSY,
+  applyYtHolderShares
+} from './logic';
 import { LiquidLockerData, PendleAPI } from './pendle-api';
 import { UserRecord } from './types';
 
@@ -38,8 +42,37 @@ async function fetchUserBalanceSnapshot(
   };
 }
 
+async function fetchUserLpValueInSYSnapshot(
+  allLPUsers: string[],
+  allLLDatas: LiquidLockerData[][],
+  blockNumber: number
+): Promise<SnapshotResult> {
+  const resultLP: UserRecord = {};
+
+  for (let i = 0; i < POOL_INFO.LPs.length; ++i) {
+    const lp = POOL_INFO.LPs[i];
+    const llData = allLLDatas[i];
+    if (lp.deployedBlock <= blockNumber) {
+      await applyLpHolderValuesInSY(
+        resultLP,
+        lp.address,
+        POOL_INFO.YT,
+        allLPUsers,
+        llData,
+        blockNumber
+      );
+    }
+  }
+
+  return {
+    resultYT: {},
+    resultLP
+  };
+}
+
 async function fetchUserBalanceSnapshotBatch(
-  blockNumbers: number[]
+  blockNumbers: number[],
+  fetchingLpValueInSY: boolean = false
 ): Promise<SnapshotResult[]> {
   const allLPTokens = POOL_INFO.LPs.map((l) => l.address);
 
@@ -53,15 +86,17 @@ async function fetchUserBalanceSnapshotBatch(
 
   return await Promise.all(
     blockNumbers.map((b) =>
-      fetchUserBalanceSnapshot(allYTUsers, allLPUsers, allLLDatas, b)
+      fetchingLpValueInSY
+        ? fetchUserLpValueInSYSnapshot(allLPUsers, allLLDatas, b)
+        : fetchUserBalanceSnapshot(allYTUsers, allLPUsers, allLLDatas, b)
     )
   );
 }
 
 async function main() {
-  const block = 22672619;
+  const block = 22729618;
 
-  const res = (await fetchUserBalanceSnapshotBatch([block]))[0];
+  const res = (await fetchUserBalanceSnapshotBatch([block], true))[0];
 
   for (const user in res.resultYT) {
     if (res.resultYT[user].eq(0)) continue;

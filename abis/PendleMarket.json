@@ -17,6 +17,11 @@
           "type": "int256"
         },
         {
+          "internalType": "uint80",
+          "name": "_lnFeeRateRoot",
+          "type": "uint80"
+        },
+        {
           "internalType": "address",
           "name": "_vePendle",
           "type": "address"
@@ -29,11 +34,6 @@
       ],
       "stateMutability": "nonpayable",
       "type": "constructor"
-    },
-    {
-      "inputs": [],
-      "name": "InvalidShortString",
-      "type": "error"
     },
     {
       "inputs": [
@@ -174,17 +174,6 @@
       "type": "error"
     },
     {
-      "inputs": [
-        {
-          "internalType": "string",
-          "name": "str",
-          "type": "string"
-        }
-      ],
-      "name": "StringTooLong",
-      "type": "error"
-    },
-    {
       "anonymous": false,
       "inputs": [
         {
@@ -244,12 +233,6 @@
         }
       ],
       "name": "Burn",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [],
-      "name": "EIP712DomainChanged",
       "type": "event"
     },
     {
@@ -407,19 +390,6 @@
       ],
       "name": "UpdateImpliedRate",
       "type": "event"
-    },
-    {
-      "inputs": [],
-      "name": "DOMAIN_SEPARATOR",
-      "outputs": [
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
     },
     {
       "inputs": [],
@@ -594,49 +564,6 @@
     },
     {
       "inputs": [],
-      "name": "eip712Domain",
-      "outputs": [
-        {
-          "internalType": "bytes1",
-          "name": "fields",
-          "type": "bytes1"
-        },
-        {
-          "internalType": "string",
-          "name": "name",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "version",
-          "type": "string"
-        },
-        {
-          "internalType": "uint256",
-          "name": "chainId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "verifyingContract",
-          "type": "address"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "salt",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "uint256[]",
-          "name": "extensions",
-          "type": "uint256[]"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
       "name": "expiry",
       "outputs": [
         {
@@ -656,6 +583,19 @@
           "internalType": "address",
           "name": "",
           "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getNonOverrideLnFeeRateRoot",
+      "outputs": [
+        {
+          "internalType": "uint80",
+          "name": "",
+          "type": "uint80"
         }
       ],
       "stateMutability": "view",
@@ -685,19 +625,6 @@
       "name": "increaseObservationsCardinalityNext",
       "outputs": [],
       "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "initialAnchor",
-      "outputs": [
-        {
-          "internalType": "int256",
-          "name": "",
-          "type": "int256"
-        }
-      ],
-      "stateMutability": "view",
       "type": "function"
     },
     {
@@ -781,25 +708,6 @@
     {
       "inputs": [
         {
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
-        }
-      ],
-      "name": "nonces",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
           "internalType": "uint256",
           "name": "",
           "type": "uint256"
@@ -843,49 +751,6 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "spender",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "value",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "deadline",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint8",
-          "name": "v",
-          "type": "uint8"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "r",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "s",
-          "type": "bytes32"
-        }
-      ],
-      "name": "permit",
-      "outputs": [],
-      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -1015,19 +880,6 @@
           "internalType": "uint128",
           "name": "lastBalance",
           "type": "uint128"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "scalarRoot",
-      "outputs": [
-        {
-          "internalType": "int256",
-          "name": "",
-          "type": "int256"
         }
       ],
       "stateMutability": "view",

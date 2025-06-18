@@ -9,6 +9,7 @@ import {
 import { POOL_INFO } from './configuration';
 import * as constants from './consts';
 import { LiquidLockerData } from './pendle-api';
+import { getLpToSyRate } from './libs/lp-price';
 
 function increaseUserAmount(
   result: UserRecord,
@@ -165,6 +166,76 @@ export async function applyLpHolderShares(
         const userShare = receiptBalance
           .mul(boostedSyBalance)
           .div(totalReceiptBalance);
+
+        increaseUserAmount(result, user, userShare);
+      }
+    }
+  }
+}
+
+export async function applyLpHolderValuesInSY(
+  result: UserRecord,
+  lpToken: string,
+  ytToken: string,
+  allUsers: string[],
+  llDatas: LiquidLockerData[],
+  blockNumber: number
+): Promise<void> {
+  const balances = await getAllERC20Balances(
+    lpToken,
+    allUsers,
+    blockNumber,
+    false
+  );
+
+  const price = await getLpToSyRate(lpToken, ytToken, blockNumber);
+
+  for (let i = 0; i < allUsers.length; ++i) {
+    const holder = allUsers[i];
+    const llIndex = llDatas.findIndex(
+      (data) => data.lpHolder.toLowerCase() === holder.toLowerCase()
+    );
+
+    if (llIndex === -1) {
+      increaseUserAmount(
+        result,
+        holder,
+        balances[i].mul(price).div(constants._1E18)
+      );
+    } else {
+      const llData = llDatas[llIndex];
+      const users = llData.users;
+      const receiptToken = llData.receiptToken;
+
+      const receiptBalances = await getAllERC20Balances(
+        receiptToken,
+        users,
+        blockNumber,
+        true
+      );
+
+      if (!receiptBalances) {
+        continue;
+      }
+
+      const totalReceiptBalance = receiptBalances.reduce(
+        (a, b) => a.add(b),
+        ethers.BigNumber.from(0)
+      );
+
+      for (let j = 0; j < users.length; ++j) {
+        const user = users[j];
+        const receiptBalance = receiptBalances[j];
+
+        if (receiptBalance.isZero()) {
+          continue;
+        }
+
+        const userShare = receiptBalance
+          .mul(balances[i])
+          .mul(price)
+          .div(totalReceiptBalance)
+          .div(constants._1E18);
 
         increaseUserAmount(result, user, userShare);
       }
