@@ -15,5 +15,5 @@ yarn install
 
 In `./src/main.ts`, the main function to call is `fetchUserBalanceSnapshotBatch`, where its arguments are simply a list of block number to query users' balance from. Do note that a buffer of at least 15 minutes are recommended before you can query a balance from a mined block.
 
-If you'd like to query for $1 in LP value, `fetchingLpValueInSY` needs to be set to **True**. The balance will be returned in SY terms.
+If you'd like to query for USD value of LP, `fetchingLpValueInSY` needs to be set to **True**. The balance will be returned in SY terms. Afterwards, you can convert it to USD value by multiplying the outcome with the current SY price.
 
