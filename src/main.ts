@@ -1,10 +1,13 @@
 import { CHAIN, POOL_INFO } from './configuration';
+import { _1E18 } from './consts';
+import { resolveMorpho } from './lib/morpho';
 import {
   applyLpHolderShares,
   applyLpHolderValuesInSY,
   applyYtHolderShares
 } from './logic';
-import { LiquidLockerData, PendleAPI } from './pendle-api';
+import { tryAggregateMulticall } from './multicall';
+import { FullMarketInfo, LiquidLockerData, PendleAPI } from './pendle-api';
 import { UserRecord } from './types';
 
 type SnapshotResult = {
@@ -14,27 +17,20 @@ type SnapshotResult = {
 
 async function fetchUserBalanceSnapshot(
   allYTUsers: string[],
-  allLPUsers: string[],
-  allLLDatas: LiquidLockerData[][],
+  lpInfos: FullMarketInfo[],
   blockNumber: number
 ): Promise<SnapshotResult> {
   const resultYT: UserRecord = {};
   const resultLP: UserRecord = {};
-  await applyYtHolderShares(resultYT, allYTUsers, blockNumber);
 
-  for (let i = 0; i < POOL_INFO.LPs.length; ++i) {
-    const lp = POOL_INFO.LPs[i];
-    const llData = allLLDatas[i];
-    if (lp.deployedBlock <= blockNumber) {
-      await applyLpHolderShares(
-        resultLP,
-        lp.address,
-        allLPUsers,
-        llData,
-        blockNumber
-      );
-    }
-  }
+  await Promise.all([
+    applyYtHolderShares(resultYT, allYTUsers, blockNumber),
+    ...lpInfos.map(async (lpInfo, i) => {
+      const lp = POOL_INFO.LPs[i];
+      if (lp.deployedBlock > blockNumber) return;
+      await applyLpHolderShares(resultLP, lp.address, lpInfo, blockNumber);
+    })
+  ]);
 
   return {
     resultYT,
@@ -43,21 +39,19 @@ async function fetchUserBalanceSnapshot(
 }
 
 async function fetchUserLpValueInSYSnapshot(
-  allLPUsers: string[],
-  allLLDatas: LiquidLockerData[][],
+  lpInfos: FullMarketInfo[],
   blockNumber: number
 ): Promise<SnapshotResult> {
   const resultLP: UserRecord = {};
-
   for (let i = 0; i < POOL_INFO.LPs.length; ++i) {
     const lp = POOL_INFO.LPs[i];
-    const llData = allLLDatas[i];
+    const llData = lpInfos[i].llDatas;
     if (lp.deployedBlock <= blockNumber) {
       await applyLpHolderValuesInSY(
         resultLP,
         lp.address,
         POOL_INFO.YT,
-        allLPUsers,
+        lpInfos[i].lpHolders,
         llData,
         blockNumber
       );
@@ -74,38 +68,33 @@ async function fetchUserBalanceSnapshotBatch(
   blockNumbers: number[],
   fetchingLpValueInSY: boolean = false
 ): Promise<SnapshotResult[]> {
-  const allLPTokens = POOL_INFO.LPs.map((l) => l.address);
-
-  const allYTUsers = await PendleAPI.query(POOL_INFO.YT);
-  const allLPUsers = await PendleAPI.queryAllTokens([...allLPTokens]);
-
-  const allLLDatas: LiquidLockerData[][] = [];
-  for (let market of POOL_INFO.LPs) {
-    allLLDatas.push(await PendleAPI.queryLL(CHAIN, market.address));
-  }
-
+  const allYTUsers = await PendleAPI.queryToken(POOL_INFO.YT);
+  const lpInfos = await Promise.all(
+    POOL_INFO.LPs.map((lp) => PendleAPI.queryMarketInfo(CHAIN, lp.address))
+  );
   return await Promise.all(
     blockNumbers.map((b) =>
       fetchingLpValueInSY
-        ? fetchUserLpValueInSYSnapshot(allLPUsers, allLLDatas, b)
-        : fetchUserBalanceSnapshot(allYTUsers, allLPUsers, allLLDatas, b)
+        ? fetchUserLpValueInSYSnapshot(lpInfos, b)
+        : fetchUserBalanceSnapshot(allYTUsers, lpInfos, b)
     )
   );
 }
 
 async function main() {
-  const block = 22729618;
+  const block = 22795103;
 
-  const res = (await fetchUserBalanceSnapshotBatch([block], true))[0];
+  const res = (await fetchUserBalanceSnapshotBatch([block]))[0];
 
   for (const user in res.resultYT) {
     if (res.resultYT[user].eq(0)) continue;
-    console.log(user, res.resultYT[user].toString());
+    // console.log(user, res.resultYT[user].toString());
   }
 
   for (const user in res.resultLP) {
     if (res.resultLP[user].eq(0)) continue;
     console.log(user, res.resultLP[user].toString());
+    return;
   }
 }
 
