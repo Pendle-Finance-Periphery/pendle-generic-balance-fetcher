@@ -6,6 +6,7 @@ import PendleYieldTokenABI from '../abis/PendleYieldToken.json';
 import PendleMarketABI from '../abis/PendleMarket.json';
 import PendleYieldContractFactoryABI from '../abis/PendleYieldContractFactory.json';
 import PendleOracleABI from '../abis/PendleOracle.json';
+import MorphoblueABI from '../abis/Morphoblue.json';
 
 const RPCS = {
   1: 'https://eth.llamarpc.com',
@@ -29,7 +30,7 @@ const MULTICALLS = {
 
 export const PENDLE_TREASURY = '0xc328dfcd2c8450e2487a91daa9b75629075b7a43';
 export const PENDLE_ORACLE = '0x9a9fa8338dd5e5b2188006f1cd2ef26d921650c2';
-export const MULTICALL_BATCH_SIZE = 50;
+export const MULTICALL_BATCH_SIZE = 500;
 export const ORACLE_INTERVAL = 15;
 export const ONE_YEAR = 86400 * 365;
 export const _1E18 = ethers.BigNumber.from(10).pow(18);
@@ -43,12 +44,14 @@ export const ABIs = {
   pendleYieldToken: PendleYieldTokenABI,
   pendleMarket: PendleMarketABI,
   pendleYieldContractFactory: PendleYieldContractFactoryABI,
-  pendleOracle: PendleOracleABI
+  pendleOracle: PendleOracleABI,
+  morphoBlue: MorphoblueABI
 };
 
 export const Contracts = {
   multicall: new ethers.Contract(MULTICALL_ADDRESS, ABIs.multicall, PROVIDER),
   oracle: new ethers.Contract(PENDLE_ORACLE, ABIs.pendleOracle, PROVIDER),
   yieldTokenInterface: new ethers.utils.Interface(ABIs.pendleYieldToken),
-  marketInterface: new ethers.utils.Interface(ABIs.pendleMarket)
+  marketInterface: new ethers.utils.Interface(ABIs.pendleMarket),
+  morphoBlueInterface: new ethers.utils.Interface(ABIs.morphoBlue)
 };

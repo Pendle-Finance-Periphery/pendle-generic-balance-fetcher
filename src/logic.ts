@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { UserRecord } from './types';
+import { UserRecord, UserTempShare } from './types';
 import {
   getAllERC20Balances,
   getAllMarketActiveBalances,
@@ -8,20 +8,14 @@ import {
 } from './multicall';
 import { POOL_INFO } from './configuration';
 import * as constants from './consts';
-import { LiquidLockerData } from './pendle-api';
+import { FullMarketInfo, LiquidLockerData } from './pendle-api';
 import { getLpToSyRate } from './libs/lp-price';
-
-function increaseUserAmount(
-  result: UserRecord,
-  user: string,
-  amount: ethers.BigNumberish
-) {
-  if (result[user]) {
-    result[user] = result[user].add(amount);
-  } else {
-    result[user] = ethers.BigNumber.from(amount);
-  }
-}
+import { increaseUserAmount, increaseUserAmounts } from './lib/record';
+import { resolveLiquidLocker } from './lib/liquid-locker';
+import { getMMType, MMType } from './lib/mmType';
+import { resolveEuler } from './lib/euler';
+import { resolveSilo } from './lib/silo';
+import { resolveMorpho } from './lib/morpho';
 
 export async function applyYtHolderShares(
   result: UserRecord,
@@ -38,18 +32,19 @@ export async function applyYtHolderShares(
     return;
   }
 
-  const balances = (
-    await getAllERC20Balances(POOL_INFO.YT, allUsers, blockNumber, false)
-  ).map((v, i) => {
+  const [balancesRaw, allInterestsRaw] = await Promise.all([
+    getAllERC20Balances(POOL_INFO.YT, allUsers, blockNumber),
+    getAllYTInterestData(POOL_INFO.YT, allUsers, blockNumber)
+  ]);
+
+  const balances = balancesRaw.map((v, i) => {
     return {
       user: allUsers[i],
       balance: v
     };
   });
 
-  const allInterests = (
-    await getAllYTInterestData(POOL_INFO.YT, allUsers, blockNumber)
-  ).map((v, i) => {
+  const allInterests = allInterestsRaw.map((v, i) => {
     return {
       user: allUsers[i],
       userIndex: v.index,
@@ -105,16 +100,16 @@ export async function applyYtHolderShares(
 export async function applyLpHolderShares(
   result: UserRecord,
   lpToken: string,
-  allUsers: string[],
-  llDatas: LiquidLockerData[],
+  lpInfo: FullMarketInfo,
   blockNumber: number
 ): Promise<void> {
   const totalSy = (
-    await getAllERC20Balances(POOL_INFO.SY, [lpToken], blockNumber, false)
+    await getAllERC20Balances(POOL_INFO.SY, [lpToken], blockNumber)
   )[0];
+
   const allActiveBalances = await getAllMarketActiveBalances(
     lpToken,
-    allUsers,
+    lpInfo.lpHolders,
     blockNumber
   );
   const totalActiveSupply = allActiveBalances.reduce(
@@ -122,53 +117,35 @@ export async function applyLpHolderShares(
     ethers.BigNumber.from(0)
   );
 
-  for (let i = 0; i < allUsers.length; ++i) {
-    const holder = allUsers[i];
-    const llIndex = llDatas.findIndex(
-      (data) => data.lpHolder.toLowerCase() === holder.toLowerCase()
-    );
-
+  for (let i = 0; i < lpInfo.lpHolders.length; ++i) {
+    const holder = lpInfo.lpHolders[i];
     const boostedSyBalance = allActiveBalances[i]
       .mul(totalSy)
       .div(totalActiveSupply);
 
+    if (
+      lpInfo.wlpInfo &&
+      holder.toLowerCase() === lpInfo.wlpInfo.wlp.toLowerCase()
+    ) {
+      await applyWlpHolderShares(result, lpInfo, blockNumber, boostedSyBalance);
+      continue;
+    }
+
+    const llIndex = lpInfo.llDatas.findIndex(
+      (data) => data.lpHolder.toLowerCase() === holder.toLowerCase()
+    );
+
     if (llIndex === -1) {
       increaseUserAmount(result, holder, boostedSyBalance);
     } else {
-      const llData = llDatas[llIndex];
-      const users = llData.users;
-      const receiptToken = llData.receiptToken;
-
-      const balances = await getAllERC20Balances(
-        receiptToken,
-        users,
-        blockNumber,
-        true
+      increaseUserAmounts(
+        result,
+        await resolveLiquidLocker(
+          boostedSyBalance,
+          lpInfo.llDatas[llIndex],
+          blockNumber
+        )
       );
-
-      if (!balances) {
-        continue;
-      }
-
-      const totalReceiptBalance = balances.reduce(
-        (a, b) => a.add(b),
-        ethers.BigNumber.from(0)
-      );
-
-      for (let j = 0; j < users.length; ++j) {
-        const user = users[j];
-        const receiptBalance = balances[j];
-
-        if (receiptBalance.isZero()) {
-          continue;
-        }
-
-        const userShare = receiptBalance
-          .mul(boostedSyBalance)
-          .div(totalReceiptBalance);
-
-        increaseUserAmount(result, user, userShare);
-      }
     }
   }
 }
@@ -181,64 +158,137 @@ export async function applyLpHolderValuesInSY(
   llDatas: LiquidLockerData[],
   blockNumber: number
 ): Promise<void> {
-  const balances = await getAllERC20Balances(
-    lpToken,
-    allUsers,
-    blockNumber,
-    false
-  );
+  const balances = await getAllERC20Balances(lpToken, allUsers, blockNumber);
 
   const price = await getLpToSyRate(lpToken, ytToken, blockNumber);
 
-  for (let i = 0; i < allUsers.length; ++i) {
-    const holder = allUsers[i];
-    const llIndex = llDatas.findIndex(
-      (data) => data.lpHolder.toLowerCase() === holder.toLowerCase()
-    );
-
-    if (llIndex === -1) {
-      increaseUserAmount(
-        result,
-        holder,
-        balances[i].mul(price).div(constants._1E18)
-      );
-    } else {
-      const llData = llDatas[llIndex];
-      const users = llData.users;
-      const receiptToken = llData.receiptToken;
-
-      const receiptBalances = await getAllERC20Balances(
-        receiptToken,
-        users,
-        blockNumber,
-        true
+  await Promise.all(
+    allUsers.map(async (holder, i) => {
+      holder = allUsers[i];
+      const llIndex = llDatas.findIndex(
+        (data) => data.lpHolder.toLowerCase() === holder.toLowerCase()
       );
 
-      if (!receiptBalances) {
-        continue;
-      }
+      if (llIndex === -1) {
+        increaseUserAmount(
+          result,
+          holder,
+          balances[i].mul(price).div(constants._1E18)
+        );
+      } else {
+        const llData = llDatas[llIndex];
+        const users = llData.users;
+        const receiptToken = llData.receiptToken;
 
-      const totalReceiptBalance = receiptBalances.reduce(
-        (a, b) => a.add(b),
-        ethers.BigNumber.from(0)
-      );
+        const receiptBalances = await getAllERC20Balances(
+          receiptToken,
+          users,
+          blockNumber
+        );
 
-      for (let j = 0; j < users.length; ++j) {
-        const user = users[j];
-        const receiptBalance = receiptBalances[j];
-
-        if (receiptBalance.isZero()) {
-          continue;
+        if (!receiptBalances) {
+          return;
         }
 
-        const userShare = receiptBalance
-          .mul(balances[i])
-          .mul(price)
-          .div(totalReceiptBalance)
-          .div(constants._1E18);
+        const totalReceiptBalance = receiptBalances.reduce(
+          (a, b) => a.add(b),
+          ethers.BigNumber.from(0)
+        );
 
-        increaseUserAmount(result, user, userShare);
+        for (let j = 0; j < users.length; ++j) {
+          const user = users[j];
+          const receiptBalance = receiptBalances[j];
+
+          if (receiptBalance.isZero()) {
+            continue;
+          }
+
+          const userShare = receiptBalance
+            .mul(balances[i])
+            .mul(price)
+            .div(totalReceiptBalance)
+            .div(constants._1E18);
+
+          increaseUserAmount(result, user, userShare);
+        }
       }
+    })
+  );
+}
+
+async function applyWlpHolderShares(
+  result: UserRecord,
+  lpInfo: FullMarketInfo,
+  blockNumber: number,
+  boostedSyBalance: ethers.BigNumber
+): Promise<void> {
+  if (!lpInfo.wlpInfo) {
+    return;
+  }
+
+  const balances = await getAllERC20Balances(
+    lpInfo.wlpInfo.wlp,
+    lpInfo.wlpInfo.wlpHolders,
+    blockNumber
+  );
+  const totalSupply = balances.reduce(
+    (a, b) => a.add(b),
+    ethers.BigNumber.from(0)
+  );
+
+  const syPerOneWLP = boostedSyBalance.mul(constants._1E18).div(totalSupply);
+
+  let totalMMShares = new Map<MMType, ethers.BigNumber>();
+
+  for (let i = 0; i < lpInfo.wlpInfo.wlpHolders.length; ++i) {
+    const holder = lpInfo.wlpInfo.wlpHolders[i];
+    const wlpBalance = balances[i];
+    const userShare = wlpBalance.mul(syPerOneWLP).div(constants._1E18);
+
+    let mmType = getMMType(lpInfo, holder);
+    if (mmType) {
+      totalMMShares.set(
+        mmType,
+        (totalMMShares.get(mmType) || ethers.BigNumber.from(0)).add(userShare)
+      );
+      continue;
     }
+    increaseUserAmount(result, holder, userShare);
+  }
+
+  const [eulerShares, siloShares, morphoShares] = await Promise.all([
+    resolveEuler(syPerOneWLP, lpInfo.wlpInfo.euler, blockNumber),
+    resolveSilo(syPerOneWLP, lpInfo.wlpInfo.silo, blockNumber),
+    resolveMorpho(
+      syPerOneWLP,
+      lpInfo.wlpInfo.morphoAddress,
+      lpInfo.wlpInfo.morpho,
+      blockNumber
+    )
+  ]);
+
+  softCheck(
+    eulerShares,
+    totalMMShares.get('EULER') || ethers.BigNumber.from(0)
+  );
+  softCheck(siloShares, totalMMShares.get('SILO') || ethers.BigNumber.from(0));
+  softCheck(
+    morphoShares,
+    totalMMShares.get('MORPHO') || ethers.BigNumber.from(0)
+  );
+  increaseUserAmounts(result, eulerShares);
+  increaseUserAmounts(result, siloShares);
+  increaseUserAmounts(result, morphoShares);
+}
+
+function softCheck(shares: UserTempShare[], upperbound: ethers.BigNumber) {
+  const total = shares.reduce(
+    (a, b) => a.add(b.share),
+    ethers.BigNumber.from(0)
+  );
+  if (total.gt(upperbound)) {
+    throw new Error(
+      `Total shares ${total.toString()} exceeds upper bound ${upperbound.toString()}`
+    );
   }
 }
