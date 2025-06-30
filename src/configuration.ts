@@ -3,12 +3,12 @@ import { CHAINS, PoolConfiguration } from './types';
 export const CHAIN = CHAINS.ETHEREUM;
 
 export const POOL_INFO: PoolConfiguration = {
-  SY: '0xb47cbf6697a6518222c7af4098a43aefe2739c8c',
-  YT: '0x733ee9ba88f16023146ebc965b7a1da18a322464',
+  SY: '0x7ac8ca87959b1d5edfe2df5325a37c304dcea4d0',
+  YT: '0xe8ef806c8aadc541408dcad36107c7d26a391712',
   LPs: [
     {
-      address: '0x9df192d13d61609d1852461c4850595e1f56e714',
-      deployedBlock: 21920466
+      address: '0xe93b4a93e80bd3065b290394264af5d82422ee70',
+      deployedBlock: 22472324
     }
   ]
 };

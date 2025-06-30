@@ -1,5 +1,7 @@
 import { ethers } from 'ethers';
+import z from 'zod';
 import * as config from './configuration';
+import * as dotenv from 'dotenv';
 
 import MulticallABI from '../abis/Multicall.json';
 import PendleYieldTokenABI from '../abis/PendleYieldToken.json';
@@ -8,14 +10,29 @@ import PendleYieldContractFactoryABI from '../abis/PendleYieldContractFactory.js
 import PendleOracleABI from '../abis/PendleOracle.json';
 import MorphoblueABI from '../abis/Morphoblue.json';
 
+
+dotenv.config();
+const envSchema = z.object({
+  ETH_RPC: z.string().optional(),
+  ARBITRUM_RPC: z.string().optional(),
+  BSC_RPC: z.string().optional(),
+  OPTIMISM_RPC: z.string().optional(),
+  MANTLE_RPC: z.string().optional(),
+  BASE_RPC: z.string().optional(),
+  SONIC_RPC: z.string().optional(),
+  BERACHAIN_RPC: z.string().optional(),
+});
+const env = envSchema.parse(process.env);
+
+
 const RPCS = {
-  1: 'https://eth.llamarpc.com',
-  42161: 'https://arbitrum-one-rpc.publicnode.com',
-  56: 'https://binance.llamarpc.com',
-  5000: 'https://rpc.mantle.xyz',
-  8453: 'https://base.llamarpc.com',
-  146: 'https://rpc.soniclabs.com',
-  80094: 'https://berachain.drpc.org'
+  1: env.ETH_RPC || 'https://eth.llamarpc.com',
+  42161: env.ARBITRUM_RPC || 'https://arbitrum-one-rpc.publicnode.com',
+  56: env.BSC_RPC || 'https://binance.llamarpc.com',
+  5000: env.MANTLE_RPC || 'https://rpc.mantle.xyz',
+  8453: env.BASE_RPC || 'https://base.llamarpc.com',
+  146: env.SONIC_RPC || 'https://rpc.soniclabs.com',
+  80094: env.BERACHAIN_RPC || 'https://berachain.drpc.org'
 };
 
 const MULTICALLS = {
