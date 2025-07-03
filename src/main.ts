@@ -72,6 +72,7 @@ async function fetchUserBalanceSnapshotBatch(
   const lpInfos = await Promise.all(
     POOL_INFO.LPs.map((lp) => PendleAPI.queryMarketInfo(CHAIN, lp.address))
   );
+
   return await Promise.all(
     blockNumbers.map((b) =>
       fetchingLpValueInSY
@@ -82,20 +83,18 @@ async function fetchUserBalanceSnapshotBatch(
 }
 
 async function main() {
-  const block = 22795103;
+  const block = 22835503;
 
   const res = (await fetchUserBalanceSnapshotBatch([block]))[0];
 
-  for (const user in res.resultYT) {
-    if (res.resultYT[user].eq(0)) continue;
-    // console.log(user, res.resultYT[user].toString());
-  }
+  // for (const user in res.resultYT) {
+  //   if (res.resultYT[user].eq(0)) continue;
+  //   // console.log(user, res.resultYT[user].toString());
+  // }
 
-  for (const user in res.resultLP) {
-    if (res.resultLP[user].eq(0)) continue;
-    console.log(user, res.resultLP[user].toString());
-    return;
-  }
+  // for (const user in res.resultLP) {
+  //   if (res.resultLP[user].eq(0)) continue;
+  // }
 }
 
 main().catch(console.error);

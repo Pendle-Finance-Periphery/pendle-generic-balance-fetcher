@@ -259,12 +259,14 @@ async function applyWlpHolderShares(
   const [eulerShares, siloShares, morphoShares] = await Promise.all([
     resolveEuler(syPerOneWLP, lpInfo.wlpInfo.euler, blockNumber),
     resolveSilo(syPerOneWLP, lpInfo.wlpInfo.silo, blockNumber),
-    resolveMorpho(
-      syPerOneWLP,
-      lpInfo.wlpInfo.morphoAddress,
-      lpInfo.wlpInfo.morpho,
-      blockNumber
-    )
+    lpInfo.wlpInfo.morphoAddress
+      ? resolveMorpho(
+          syPerOneWLP,
+          lpInfo.wlpInfo.morphoAddress,
+          lpInfo.wlpInfo.morpho,
+          blockNumber
+        )
+      : []
   ]);
 
   softCheck(

@@ -38,7 +38,7 @@ export type FullMarketInfo = {
     euler: EulerUserInstance[];
     silo: SiloUserInstance[];
 
-    morphoAddress: string;
+    morphoAddress?: string;
     morpho: MorphoUserInstance[];
     remapMMHolder: Record<string, MMMapType>;
   };
@@ -84,6 +84,12 @@ export class PendleAPI {
       };
     }
 
+    let morphoAddress: string | undefined = undefined;
+    if (resp.data.wlpDistinctUsersResponse.morphoConfigs.length > 0) {
+      morphoAddress =
+        resp.data.wlpDistinctUsersResponse.morphoConfigs[0].morphoAddress.toLowerCase();
+    }
+
     return {
       lpHolders: resp.data.distinctUsers,
       llDatas: resp.data.liquidLockerPools,
@@ -92,7 +98,7 @@ export class PendleAPI {
         wlpHolders: resp.data.wlpDistinctUsersResponse.wlpUsers,
         morpho: resp.data.wlpDistinctUsersResponse.morphoUsers,
         euler: resp.data.wlpDistinctUsersResponse.eulerUsers,
-        morphoAddress: resp.data.wlpDistinctUsersResponse.morphoAddress,
+        morphoAddress: morphoAddress,
         silo: resp.data.wlpDistinctUsersResponse.siloUsers,
         remapMMHolder
       }

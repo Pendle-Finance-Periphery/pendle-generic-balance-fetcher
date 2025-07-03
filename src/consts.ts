@@ -10,7 +10,6 @@ import PendleYieldContractFactoryABI from '../abis/PendleYieldContractFactory.js
 import PendleOracleABI from '../abis/PendleOracle.json';
 import MorphoblueABI from '../abis/Morphoblue.json';
 
-
 dotenv.config();
 const envSchema = z.object({
   ETH_RPC: z.string().optional(),
@@ -20,10 +19,9 @@ const envSchema = z.object({
   MANTLE_RPC: z.string().optional(),
   BASE_RPC: z.string().optional(),
   SONIC_RPC: z.string().optional(),
-  BERACHAIN_RPC: z.string().optional(),
+  BERACHAIN_RPC: z.string().optional()
 });
 const env = envSchema.parse(process.env);
-
 
 const RPCS = {
   1: env.ETH_RPC || 'https://eth.llamarpc.com',
