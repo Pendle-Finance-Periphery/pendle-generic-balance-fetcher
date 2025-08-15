@@ -30,5 +30,6 @@ export enum CHAINS {
   BASE = 8453,
   MANTLE = 5000,
   SONIC = 146,
-  BERA = 80094
+  BERA = 80094,
+  HYPEREVM = 999
 }

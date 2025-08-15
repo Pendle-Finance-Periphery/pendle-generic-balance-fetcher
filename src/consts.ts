@@ -19,7 +19,8 @@ const envSchema = z.object({
   MANTLE_RPC: z.string().optional(),
   BASE_RPC: z.string().optional(),
   SONIC_RPC: z.string().optional(),
-  BERACHAIN_RPC: z.string().optional()
+  BERACHAIN_RPC: z.string().optional(),
+  HYPEREVM_RPC: z.string().optional(),
 });
 const env = envSchema.parse(process.env);
 
@@ -30,7 +31,8 @@ const RPCS = {
   5000: env.MANTLE_RPC || 'https://rpc.mantle.xyz',
   8453: env.BASE_RPC || 'https://base.llamarpc.com',
   146: env.SONIC_RPC || 'https://rpc.soniclabs.com',
-  80094: env.BERACHAIN_RPC || 'https://berachain.drpc.org'
+  80094: env.BERACHAIN_RPC || 'https://berachain.drpc.org',
+  999: env.HYPEREVM_RPC || 'https://rpc.purroofgroup.com/'
 };
 
 const MULTICALLS = {
@@ -40,7 +42,8 @@ const MULTICALLS = {
   5000: '0xcA11bde05977b3631167028862bE2a173976CA11',
   8453: '0xcA11bde05977b3631167028862bE2a173976CA11',
   146: '0xcA11bde05977b3631167028862bE2a173976CA11',
-  80094: '0xcA11bde05977b3631167028862bE2a173976CA11'
+  80094: '0xcA11bde05977b3631167028862bE2a173976CA11',
+  999: '0xcA11bde05977b3631167028862bE2a173976CA11'
 };
 
 export const PENDLE_TREASURY = '0xc328dfcd2c8450e2487a91daa9b75629075b7a43';
