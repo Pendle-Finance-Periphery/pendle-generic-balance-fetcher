@@ -58,6 +58,7 @@ export async function applyYtHolderShares(
       return a.gt(b) ? a : b;
     });
 
+
   const YTBalances: UserRecord = {};
 
   const factoryContract = new ethers.Contract(
@@ -127,7 +128,9 @@ export async function applyLpHolderShares(
       lpInfo.wlpInfo &&
       holder.toLowerCase() === lpInfo.wlpInfo.wlp.toLowerCase()
     ) {
-      await applyWlpHolderShares(result, lpInfo, blockNumber, boostedSyBalance);
+      if (boostedSyBalance.gt(0)) {
+        await applyWlpHolderShares(result, lpInfo, blockNumber, boostedSyBalance);
+      }
       continue;
     }
 
