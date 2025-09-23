@@ -83,9 +83,10 @@ async function fetchUserBalanceSnapshotBatch(
 }
 
 async function main() {
-  const block = 22835503;
+  const block = 22693796;
 
   const res = (await fetchUserBalanceSnapshotBatch([block]))[0];
+  console.log(res);
 
   // for (const user in res.resultYT) {
   //   if (res.resultYT[user].eq(0)) continue;
