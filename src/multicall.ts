@@ -24,7 +24,7 @@ export async function tryAggregateMulticall(
     );
 
     for (let r of resp) {
-      if (r.success === false) {
+      if (r.success === false || !r.returnData || r.returnData === '0x') {
         result.push(null);
       } else {
         result.push(r.returnData as string);
@@ -88,7 +88,9 @@ export async function getAllMarketActiveBalances(
   }));
   const balances = await tryAggregateMulticall(callDatas, blockNumber);
   return balances.map((b) =>
-    BigNumber.from(utils.defaultAbiCoder.decode(['uint256'], b!)[0])
+    b
+      ? BigNumber.from(utils.defaultAbiCoder.decode(['uint256'], b)[0])
+      : BigNumber.from(0)
   );
 }
 
@@ -106,7 +108,13 @@ export async function getAllYTInterestData(
   }));
   const interests = await tryAggregateMulticall(callDatas, blockNumber);
   return interests.map((b) => {
-    const rawData = utils.defaultAbiCoder.decode(['uint128', 'uint128'], b!);
+    if (!b || b === '0x') {
+      return {
+        index: BigNumber.from(0),
+        accrue: BigNumber.from(0)
+      };
+    }
+    const rawData = utils.defaultAbiCoder.decode(['uint128', 'uint128'], b);
     return {
       index: BigNumber.from(rawData[0]),
       accrue: BigNumber.from(rawData[1])
@@ -143,11 +151,17 @@ export async function getYTGeneralData(
   ];
 
   const result = await tryAggregateMulticall(callDatas, blockNumber);
-  const isExpired = utils.defaultAbiCoder.decode(['bool'], result[0]!)[0];
+  if (!result[0] || !result[1] || !result[2]) {
+    throw new Error(
+      `Failed to fetch YT general data for ${ytAddr} at block ${blockNumber}`
+    );
+  }
+
+  const isExpired = utils.defaultAbiCoder.decode(['bool'], result[0])[0];
   const syReserve = BigNumber.from(
-    utils.defaultAbiCoder.decode(['uint256'], result[1]!)[0]
+    utils.defaultAbiCoder.decode(['uint256'], result[1])[0]
   );
-  const factory = utils.defaultAbiCoder.decode(['address'], result[2]!)[0];
+  const factory = utils.defaultAbiCoder.decode(['address'], result[2])[0];
 
   return {
     isExpired,
